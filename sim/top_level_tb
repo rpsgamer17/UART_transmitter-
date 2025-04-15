@@ -1,0 +1,89 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity lab3_top_tb is
+end lab3_top_tb;
+
+architecture tb of lab3_top_tb is
+
+    component lab3_top
+        port (
+            clk  : in std_logic;
+            TXD  : in std_logic;
+            btn  : in std_logic_vector(1 downto 0);
+            RXD  : out std_logic
+        );
+    end component;
+
+    signal clk       : std_logic := '0';
+    signal TXD       : std_logic := '1';  -- dummy input, not used
+    signal RXD       : std_logic;
+    signal btn       : std_logic_vector(1 downto 0) := (others => '0');
+
+    -- Internal debug signals (to be monitored via waveform)
+    signal send_sig     : std_logic;
+    signal char_sig     : std_logic_vector(7 downto 0);
+    signal ready_sig    : std_logic;
+    signal div_sig      : std_logic;
+    signal tx_out       : std_logic;
+
+    -- Clock for simulation: 100 MHz
+    constant CLK_PERIOD : time := 10 ns;
+
+begin
+
+    -- Instantiate DUT
+    uut: entity work.lab3_top
+        port map (
+            clk  => clk,
+            TXD  => TXD,
+            btn  => btn,
+            RXD  => RXD
+        );
+
+    -- Clock generation
+    clk_process: process
+    begin
+        clk <= '0';
+        wait for CLK_PERIOD / 2;
+        clk <= '1';
+        wait for CLK_PERIOD / 2;
+    end process;
+
+    -- Stimulus process
+    stim_proc: process
+    begin
+        -- Assert reset
+        btn(0) <= '1';
+        wait for 200 ns;
+        btn(0) <= '0';
+
+        -- Wait for debounce to settle
+        wait for 1 ms;
+
+        -- Press the send button
+        btn(1) <= '1';
+        wait for 100 ms;
+        btn(1) <= '0';
+
+        wait for 500 ms; -- wait to allow FSM to finish sending
+
+        -- Press again
+        btn(1) <= '1';
+        wait for 100 ms;
+        btn(1) <= '0';
+
+        wait for 1 ms;
+
+        report "Simulation finished!" severity failure;
+    end process;
+
+    -- Add debug signal assignments
+    -- NOTE: You must manually add these to the waveform viewer (RXD, btn, clk, etc.)
+    -- These assignments are to help the simulator's hierarchy browsing
+
+    -- These are not connected directly unless you expose them from lab3_top
+    -- Alternatively, view the waveform by navigating through the DUT hierarchy
+
+end tb;
